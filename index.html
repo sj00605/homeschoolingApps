@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Popell Homeschool Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#2b2a4c;--soft:#6f6c8f;--edge:#e6e0d2;--bg:#fff8ec}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;min-height:100%}
+  body{font-family:'Andika',system-ui,sans-serif;color:var(--ink);
+       background:radial-gradient(circle at 10% 0%,#ffe7c2 0,transparent 35%),radial-gradient(circle at 95% 100%,#dff0ff 0,transparent 40%),var(--bg)}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px 18px 40px}
+  header{text-align:center;margin:10px 0 26px}
+  .badge{font-size:64px;line-height:1}
+  h1{font-size:clamp(30px,6vw,52px);margin:8px 0 4px;letter-spacing:.3px}
+  .tag{font-size:clamp(17px,3vw,21px);color:var(--soft);margin:0}
+  .filters{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 22px}
+  .filters button{font-family:inherit;font-size:17px;font-weight:700;border:2px solid var(--edge);background:#fff;border-radius:999px;padding:7px 16px;cursor:pointer;color:var(--ink)}
+  .filters button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+  .card{display:flex;flex-direction:column;text-decoration:none;color:var(--ink);background:#fff;border-radius:26px;overflow:hidden;
+        border:3px solid var(--edge);box-shadow:0 8px 0 var(--edge);transition:transform .15s,box-shadow .15s}
+  .card:hover{transform:translateY(-4px);box-shadow:0 12px 0 var(--edge)}
+  .card:active{transform:translateY(4px);box-shadow:0 3px 0 var(--edge)}
+  .art{height:150px;display:flex;align-items:center;justify-content:center;font-size:84px;position:relative}
+  .art .subj{position:absolute;top:12px;left:12px;font-size:14px;font-weight:700;background:rgba(255,255,255,.9);border-radius:999px;padding:3px 10px}
+  .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;flex:1}
+  .body h2{margin:0;font-size:24px}
+  .body p{margin:0;font-size:17px;color:var(--soft)}
+  .meta{margin-top:auto;padding-top:8px;font-size:13px;color:var(--soft);display:flex;gap:6px;flex-wrap:wrap}
+  .meta span{background:#f5f1e8;border-radius:999px;padding:2px 9px}
+  .play{font-weight:700;color:#fff;border-radius:999px;padding:9px 0;text-align:center;font-size:19px;margin-top:10px}
+  footer{text-align:center;color:var(--soft);font-size:14px;margin-top:34px;line-height:1.5}
+  details{max-width:720px;margin:30px auto 0;background:#fff;border:2px dashed var(--edge);border-radius:18px;padding:12px 18px;color:var(--soft);font-size:15px;line-height:1.5}
+  summary{cursor:pointer;font-weight:700;color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge">🏡</div>
+    <h1>The Popell Homeschool Hub</h1>
+    <p class="tag">Pick a game and let's learn!</p>
+  </header>
+
+  <div class="filters" id="filters"></div>
+  <div class="grid" id="grid"></div>
+
+  <details>
+    <summary>For grown-ups</summary>
+    <p>Every game talks, so sound works best. On an iPhone or iPad, turn off the silent switch. Sound starts after the first tap. Each game has a 🏠 button in the corner to come back here. The games work offline once they've loaded, and nothing is tracked or saved.</p>
+  </details>
+  <footer>Made with love for the Popell family 💛</footer>
+</div>
+
+<script src="games.js"></script>
+<script>
+const games = window.GAMES || [];
+const subjects = ["All", ...new Set(games.map(g => g.subject))];
+let current = "All";
+
+function render(){
+  document.getElementById("filters").innerHTML = subjects.map(s =>
+    `<button class="${s===current?"on":""}" data-s="${s}">${s}</button>`).join("");
+  document.querySelectorAll("#filters button").forEach(b => b.onclick = () => { current = b.dataset.s; render(); });
+  const shown = games.filter(g => current==="All" || g.subject===current);
+  document.getElementById("grid").innerHTML = shown.map(g => `
+    <a class="card" href="games/${g.folder}/index.html">
+      <div class="art" style="background:${g.color}22"><span class="subj" style="color:${g.color}">${g.subject}</span>${g.emoji}</div>
+      <div class="body">
+        <h2>${g.title}</h2>
+        <p>${g.blurb}</p>
+        <div class="meta">${(g.languages||[]).map(l=>`<span>${l}</span>`).join("")}<span>${g.skills}</span></div>
+        <div class="play" style="background:${g.color}">Play ▶</div>
+      </div>
+    </a>`).join("");
+}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<!--
+  Starter for a new Popell Homeschool Hub game.
+  1. Copy this file to games/<your-game>/index.html
+  2. Add the game to games.js
+  3. Optional voice: list its lines in voice-lines/<your-game>.json, then
+       python3 tools/record_voice.py voice-lines/<your-game>.json
+       python3 tools/embed_voice.py <your-game> recordings/<your-game>.zip
+     and play a line with  say("line_name")
+-->
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:'Andika',system-ui,sans-serif;color:#2b2a4c;background:#fff8ec;
+       min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;user-select:none}
+  h1{font-size:40px;margin:0}
+  .big{font-family:inherit;font-size:28px;font-weight:700;border:none;border-radius:999px;padding:14px 40px;
+       background:#6c8cff;color:#fff;cursor:pointer;box-shadow:0 6px 0 #4a66d8}
+  .big:active{transform:translateY(4px);box-shadow:0 2px 0 #4a66d8}
+  .hub-home{position:fixed;left:12px;bottom:12px;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;
+       justify-content:center;font-size:24px;text-decoration:none;background:#fff;border:2px solid #d9dfe8;box-shadow:0 3px 8px rgba(0,0,0,.15)}
+</style>
+</head>
+<body>
+<h1>⭐ New Game</h1>
+<button class="big" id="startBtn">Start</button>
+<p id="msg"></p>
+<a class="hub-home" href="../../index.html" aria-label="Back to the hub">🏠</a>
+
+<script>
+// Voice recordings live here (filled in by tools/embed_voice.py). Leave it as {} to start.
+const VOICE_CLIPS={};
+// Plays pre-recorded voice clips (Amy) through Web Audio so it works on phones and tablets after the first tap.
+const Voice=(()=>{
+  let ac=null, cache={}, token=0, src=null;
+  function ctx(){
+    if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)();
+    if(ac.state==="suspended") try{ac.resume()}catch(e){}
+    return ac;
+  }
+  function buf(s){const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
+  function load(id){
+    if(!cache[id]){
+      const d=VOICE_CLIPS[id];
+      cache[id]= d ? new Promise(res=>{try{ctx().decodeAudioData(buf(d),res,()=>res(null))}catch(e){res(null)}}) : Promise.resolve(null);
+    }
+    return cache[id];
+  }
+  function stop(){ token++; try{src&&src.stop()}catch(e){} src=null; }
+  let current=Promise.resolve();
+  function play(ids){ current=run(ids); return current; }
+  // wait for whatever is playing to finish, then play (used for automatic prompts)
+  function after(ids){ return current.then(()=>play(ids)); }
+  async function run(ids){
+    ids=[].concat(ids); stop(); const t=token; ctx();
+    for(const id of ids){
+      const b=await load(id); if(t!==token) return; if(!b) continue;
+      await new Promise(r=>{src=ctx().createBufferSource();src.buffer=b;src.connect(ctx().destination);src.onended=r;src.start();});
+      if(t!==token) return;
+    }
+  }
+  function warm(){ ctx(); Object.keys(VOICE_CLIPS).forEach((id,i)=>setTimeout(()=>load(id),i*10)); }
+  return {play,after,stop,warm,ctx};
+})();
+</script>
+<script>
+let talking = true;
+// say(): interrupts whatever is playing (use for answers to a tap)
+function say(ids,force){ if(!talking&&!force) return Promise.resolve(); return Voice.play(ids); }
+// sayAfter(): waits for the current line to finish (use for automatic prompts)
+function sayAfter(ids,force){ if(!talking&&!force) return Promise.resolve(); return Voice.after(ids); }
+
+document.getElementById("startBtn").onclick = () => {
+  Voice.warm();                       // unlocks sound on phones and tablets (must be in a tap)
+  document.getElementById("msg").textContent = "Your game goes here!";
+  say("intro");                       // plays nothing until an "intro" recording is added
+};
+</script>
+</body>
+</html>
