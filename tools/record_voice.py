@@ -12,11 +12,15 @@ To redo a line you don't like, delete its .mp3 (or use --only) and run again.
 
 Uses only built-in Python, so nothing needs installing.
 Lines whose name starts with "slow_" are recorded at a slower speed.
+Lines containing Hebrew letters use ElevenLabs' Eleven v3 model (it handles Hebrew); others use Multilingual v2.
+  --hebrew   record only the lines that contain Hebrew (e.g. to redo them with a Hebrew voice)
 """
 import argparse, getpass, json, os, sys, time, urllib.error, urllib.request, zipfile
 
 API = "https://api.elevenlabs.io/v1"
 MODEL = "eleven_multilingual_v2"
+HEBREW_MODEL = "eleven_v3"
+is_hebrew = lambda text: any("\u0590" <= ch <= "\u05FF" for ch in text)
 DEFAULT_VOICE_NAME = "Bill Oxley"   # the voice used for all the games so far
 
 def call(path, key, body=None):
@@ -30,15 +34,19 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("lines", help="a voice-lines/<game>.json file")
     ap.add_argument("--only", nargs="*", help="record only these line names (re-records them)")
+    ap.add_argument("--hebrew", action="store_true", help="record only lines that contain Hebrew (re-records them)")
     args = ap.parse_args()
 
     game = os.path.splitext(os.path.basename(args.lines))[0]
     lines = json.load(open(args.lines, encoding="utf-8"))
     if args.only:
         lines = {k: v for k, v in lines.items() if k in args.only}
+    if args.hebrew:
+        lines = {k: v for k, v in lines.items() if is_hebrew(v)}
+        game += "-hebrew"
     out = os.path.join("recordings", game)
     os.makedirs(out, exist_ok=True)
-    if args.only:
+    if args.only or args.hebrew:
         for k in lines:
             p = os.path.join(out, k + ".mp3")
             if os.path.exists(p): os.remove(p)
@@ -52,7 +60,7 @@ def main():
             voices = json.loads(call("/voices", key))["voices"]
         except urllib.error.HTTPError as e:
             sys.exit(f"Couldn't sign in to ElevenLabs ({e.code}). Check the API key.")
-        default = next((i for i, v in enumerate(voices, 1) if v["name"].startswith(DEFAULT_VOICE_NAME)), None)
+        default = None if args.hebrew else next((i for i, v in enumerate(voices, 1) if v["name"].startswith(DEFAULT_VOICE_NAME)), None)
         print("\nYour voices:")
         for i, v in enumerate(voices, 1):
             print(f"  {i:2}. {v['name']}" + ("   <- used for the other games" if i == default else ""))
@@ -61,9 +69,14 @@ def main():
         print(f"\nUsing {voice['name']}...\n")
         done = 0
         for cid, text in todo.items():
-            body = {"text": text, "model_id": MODEL,
-                    "voice_settings": {"stability": 0.55, "similarity_boost": 0.75, "style": 0.3,
-                                       "use_speaker_boost": True, "speed": 0.7 if cid.startswith("slow_") else 0.92}}
+            speed = 0.7 if cid.startswith("slow_") else 0.92
+            if is_hebrew(text):   # Eleven v3 accepts only a few settings
+                body = {"text": text, "model_id": HEBREW_MODEL,
+                        "voice_settings": {"stability": 0.5, "similarity_boost": 0.75, "speed": speed}}
+            else:
+                body = {"text": text, "model_id": MODEL,
+                        "voice_settings": {"stability": 0.55, "similarity_boost": 0.75, "style": 0.3,
+                                           "use_speaker_boost": True, "speed": speed}}
             for attempt in range(5):
                 try:
                     audio = call(f"/text-to-speech/{voice['voice_id']}?output_format=mp3_22050_32", key, body)
@@ -74,6 +87,8 @@ def main():
                     msg = e.read().decode(errors="ignore")[:200]
                     if e.code == 429:
                         time.sleep(3 * (attempt + 1)); continue
+                    if e.code in (400, 422) and "voice_settings" in body:
+                        body.pop("voice_settings"); continue   # retry with the voice's own settings
                     if e.code == 401 or "quota" in msg.lower():
                         sys.exit(f"\nStopped: {msg}\nYou may be out of characters. Run again later to finish.")
                     print(f"  problem with {cid}: {e.code} {msg}"); break
@@ -90,7 +105,7 @@ def main():
         for k in lines:
             z.write(os.path.join(out, k + ".mp3"), k + ".mp3")
     print(f"\nDone! Recordings are in {out}/ and {zpath}")
-    print(f"Next: python3 tools/embed_voice.py {game} {zpath}\n")
+    print(f"Next: python3 tools/embed_voice.py {game.replace('-hebrew','')} {zpath}\n")
 
 if __name__ == "__main__":
     main()
