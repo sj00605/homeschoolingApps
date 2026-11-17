@@ -50,7 +50,8 @@ The current voice is **Bill Oxley** from ElevenLabs, slowed to 85% speed for you
 To record or re-record lines (needs an ElevenLabs account; Python 3; and `ffmpeg` for step 2):
 
 ```bash
-# 1. Record. It asks for your ElevenLabs API key and which voice to use.
+# 1. Record. It asks which voice to use, and for your ElevenLabs API key the first time
+#    (it can save the key in ~/.elevenlabs_key, or set ELEVENLABS_API_KEY, so you only paste it once).
 python3 tools/record_voice.py voice-lines/asteroid-pilot.json
 #    Redo only certain lines:
 python3 tools/record_voice.py voice-lines/asteroid-pilot.json --only find_13 yes_13

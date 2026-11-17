@@ -30,6 +30,29 @@ def call(path, key, body=None):
     with urllib.request.urlopen(req, timeout=60) as r:
         return r.read()
 
+def get_key():
+    """Find the ElevenLabs API key: ELEVENLABS_API_KEY, then a key saved earlier, else ask once (and offer to save it)."""
+    k = os.environ.get("ELEVENLABS_API_KEY", "").strip()
+    if k:
+        return k
+    path = os.path.join(os.path.expanduser("~"), ".elevenlabs_key")
+    if os.path.exists(path):
+        k = open(path).read().strip()
+        if k:
+            print("Using your saved ElevenLabs key.")
+            return k
+    k = getpass.getpass("Paste your ElevenLabs API key and press Enter: ").strip()
+    if input("Save the key on this computer so you never have to paste it again? (y/n): ").strip().lower().startswith("y"):
+        with open(path, "w") as f:
+            f.write(k)
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            pass
+        print(f"Saved in {path}  (delete that file to make it forget the key).")
+    return k
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("lines", help="a voice-lines/<game>.json file")
@@ -55,11 +78,11 @@ def main():
     print(f"\n{game}: {len(lines)} lines, {len(todo)} to record "
           f"(about {sum(len(v) for v in todo.values()):,} characters of your ElevenLabs allowance).\n")
     if todo:
-        key = getpass.getpass("Paste your ElevenLabs API key and press Enter: ").strip()
+        key = get_key()
         try:
             voices = json.loads(call("/voices", key))["voices"]
         except urllib.error.HTTPError as e:
-            sys.exit(f"Couldn't sign in to ElevenLabs ({e.code}). Check the API key.")
+            sys.exit(f"Couldn't sign in to ElevenLabs ({e.code}). Check the API key (a saved key lives in ~/.elevenlabs_key; delete it to enter a new one).")
         default = None if args.hebrew else next((i for i, v in enumerate(voices, 1) if v["name"].startswith(DEFAULT_VOICE_NAME)), None)
         print("\nYour voices:")
         for i, v in enumerate(voices, 1):
@@ -90,7 +113,7 @@ def main():
                     if e.code in (400, 422) and "voice_settings" in body:
                         body.pop("voice_settings"); continue   # retry with the voice's own settings
                     if e.code == 401 or "quota" in msg.lower():
-                        sys.exit(f"\nStopped: {msg}\nYou may be out of characters. Run again later to finish.")
+                        sys.exit(f"\nStopped: {msg}\nIf the key is wrong, delete ~/.elevenlabs_key and run again. You may be out of characters. Run again later to finish.")
                     print(f"  problem with {cid}: {e.code} {msg}"); break
                 except Exception as e:
                     print(f"  retrying {cid}: {e}"); time.sleep(2)
