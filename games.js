@@ -3,7 +3,7 @@
 //   folder   - the game's folder name inside games/
 //   title    - name shown on the card
 //   emoji    - big picture on the card
-//   subject  - "Reading", "Math", "Letters", "Numbers" (groups the cards)
+//   subject  - "Reading", "Math", "Letters", "Numbers", "Geography" (groups the cards)
 //   color    - card color
 //   blurb    - one short line about the game
 //   skills   - what it practices (shown small, for grown-ups)
@@ -48,5 +48,15 @@ window.GAMES = [
     blurb: "Find the right number and blast the asteroid to reach the space station.",
     skills: "Number recognition 0 to 10 or 0 to 20; Hebrew counting words",
     languages: ["English", "Hebrew"]
+  },
+  {
+    folder: "world-map",
+    title: "World Map",
+    emoji: "🌍",
+    subject: "Geography",
+    color: "#5aa9e6",
+    blurb: "Tap a continent to hear its name.",
+    skills: "The seven continents on a Mercator map",
+    languages: ["English"]
   }
 ];

@@ -1,0 +1,10 @@
+{
+ "northAmerica": "North America.",
+ "southAmerica": "South America.",
+ "europe": "Europe.",
+ "africa": "Africa.",
+ "asia": "<phoneme alphabet=\"cmu-arpabet\" ph=\"EY1 ZH AH0\">Asia</phoneme>.",
+ "australia": "Australia.",
+ "antarctica": "Antarctica.",
+ "intro": "Tap a continent to hear its name."
+}

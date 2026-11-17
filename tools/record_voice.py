@@ -12,7 +12,8 @@ To redo a line you don't like, delete its .mp3 (or use --only) and run again.
 
 Uses only built-in Python, so nothing needs installing.
 Lines whose name starts with "slow_" are recorded at a slower speed.
-Lines containing Hebrew letters use ElevenLabs' Eleven v3 model (it handles Hebrew); others use Multilingual v2.
+Lines containing Hebrew letters use ElevenLabs' Eleven v3 model (it handles Hebrew); lines with a
+<phoneme> pronunciation tag use Flash v2 (the model that reads them); others use Multilingual v2.
   --hebrew   record only the lines that contain Hebrew (e.g. to redo them with a Hebrew voice)
 """
 import argparse, getpass, json, os, sys, time, urllib.error, urllib.request, zipfile
@@ -20,6 +21,7 @@ import argparse, getpass, json, os, sys, time, urllib.error, urllib.request, zip
 API = "https://api.elevenlabs.io/v1"
 MODEL = "eleven_multilingual_v2"
 HEBREW_MODEL = "eleven_v3"
+PHONEME_MODEL = "eleven_flash_v2"   # only this model reads <phoneme> pronunciation tags
 is_hebrew = lambda text: any("\u0590" <= ch <= "\u05FF" for ch in text)
 DEFAULT_VOICE_NAME = "Bill Oxley"   # the voice used for all the games so far
 
@@ -93,7 +95,10 @@ def main():
         done = 0
         for cid, text in todo.items():
             speed = 0.7 if cid.startswith("slow_") else 0.92
-            if is_hebrew(text):   # Eleven v3 accepts only a few settings
+            if "<phoneme" in text:   # exact pronunciation, e.g. Asia = "AY-zhuh"
+                body = {"text": text, "model_id": PHONEME_MODEL,
+                        "voice_settings": {"stability": 0.55, "similarity_boost": 0.75, "speed": speed}}
+            elif is_hebrew(text):   # Eleven v3 accepts only a few settings
                 body = {"text": text, "model_id": HEBREW_MODEL,
                         "voice_settings": {"stability": 0.5, "similarity_boost": 0.75, "speed": speed}}
             else:

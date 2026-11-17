@@ -9,6 +9,7 @@ Every game is a single web page, so it runs in any browser, on a tablet, phone o
 | 🪜 **Word Ladder** | Phonics: change one letter to make a new word | English |
 | 🐟 **Feed the Cat** | Adding and taking away, answers 0–10 | English |
 | 🚀 **Asteroid Pilot** | Number recognition 0–10 or 0–20; Hebrew counting words | English, Hebrew |
+| 🌍 **World Map** | The seven continents: tap one to hear its name | English |
 
 ## Playing
 
@@ -45,7 +46,8 @@ tools/                scripts for recording voices and putting them into games
 ## Voices
 
 The games use recordings, not the device's robot voice, so they sound the same everywhere and work offline.
-The current voice is **Bill Oxley** from ElevenLabs, slowed to 85% speed for young listeners.
+The voices are from ElevenLabs, slowed to 85% speed for young listeners: **Bill Oxley** for English in the games,
+**Erez** for Hebrew, and **Sarah** for the World Map.
 
 To record or re-record lines (needs an ElevenLabs account; Python 3; and `ffmpeg` for step 2):
 
@@ -61,5 +63,6 @@ python3 tools/embed_voice.py asteroid-pilot recordings/asteroid-pilot.zip
 ```
 
 To change what a line says, edit it in `voice-lines/<game>.json`, then re-record just that line with `--only`.
-Hebrew words are written in English-style spellings (like `shah-losh`) so the English voice says them close to the Hebrew.
+Hebrew words are written in Hebrew with vowel marks, for the Hebrew voice.
+To force an exact English pronunciation, wrap the word in a tag, like `<phoneme alphabet="cmu-arpabet" ph="EY1 ZH AH0">Asia</phoneme>` (see `voice-lines/world-map.json`).
 The `recordings/` folder is kept out of the repository; the recordings that matter are stored inside each game.
