@@ -10,6 +10,7 @@ Every game is a single web page, so it runs in any browser, on a tablet, phone o
 | 🐟 **Feed the Cat** | Adding and taking away, answers 0–10 | English |
 | 🚀 **Asteroid Pilot** | Number recognition 0–10 or 0–20; Hebrew counting words | English, Hebrew |
 | 🌍 **World Map** | The seven continents: tap one to hear its name | English |
+| 🪐 **Solar System** | The eight planets: explore, rocket tour, guess from clues, true sizes and distances | English |
 
 ## Playing
 
@@ -47,7 +48,7 @@ tools/                scripts for recording voices and putting them into games
 
 The games use recordings, not the device's robot voice, so they sound the same everywhere and work offline.
 The voices are from ElevenLabs, slowed to 85% speed for young listeners: **Bill Oxley** for English in the games,
-**Erez** for Hebrew, and **Sarah** for the World Map.
+**Erez** for Hebrew, **Sarah** for the World Map, and **Bill – Wise, Mature, Balanced** for the Solar System.
 
 To record or re-record lines (needs an ElevenLabs account; Python 3; and `ffmpeg` for step 2):
 

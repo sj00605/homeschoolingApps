@@ -3,7 +3,7 @@
 //   folder   - the game's folder name inside games/
 //   title    - name shown on the card
 //   emoji    - big picture on the card
-//   subject  - "Reading", "Math", "Letters", "Numbers", "Geography" (groups the cards)
+//   subject  - "Reading", "Math", "Letters", "Numbers", "Geography", "Science" (groups the cards)
 //   color    - card color
 //   blurb    - one short line about the game
 //   skills   - what it practices (shown small, for grown-ups)
@@ -57,6 +57,16 @@ window.GAMES = [
     color: "#5aa9e6",
     blurb: "Tap a continent to hear its name.",
     skills: "The seven continents on a Mercator map",
+    languages: ["English"]
+  },
+  {
+    folder: "solar-system",
+    title: "Solar System",
+    emoji: "🪐",
+    subject: "Science",
+    color: "#7c6cf0",
+    blurb: "Explore the planets, fly a rocket tour, guess from clues, and see how big and far they really are.",
+    skills: "The eight planets: names, order, facts, true sizes and distances",
     languages: ["English"]
   }
 ];
