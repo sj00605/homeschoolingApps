@@ -100,5 +100,13 @@
  "dist_uranus": "Here's <phoneme alphabet=\"cmu-arpabet\" ph=\"Y UH1 R AH0 N AH0 S\">Uranus</phoneme>. It's about twenty times farther than Earth!",
  "dist_neptune": "Here's Neptune. It's thirty times farther from the sun than Earth!",
  "far_intro": "The planets are really far apart! Tap go to fly from the sun to Neptune.",
- "far_end": "We made it to Neptune! It's so far away, it took a real spaceship twelve years to get here."
+ "far_end": "We made it to Neptune! It's so far away, it took a real spaceship twelve years to get here.",
+ "nasa_mercury": "Mercury is the planet nearest to the Sun, and the smallest planet in our solar system.",
+ "nasa_venus": "Venus is the second planet from the Sun, and the sixth largest planet.",
+ "nasa_earth": "Earth, our home planet, is the third planet from the Sun, and the fifth largest planet.",
+ "nasa_mars": "Mars is the fourth planet from the Sun, and the seventh largest planet.",
+ "nasa_jupiter": "Jupiter is the fifth planet from the Sun, and the largest planet in our solar system.",
+ "nasa_saturn": "Saturn is the sixth planet from the Sun, and the second largest planet in our solar system.",
+ "nasa_uranus": "<phoneme alphabet=\"cmu-arpabet\" ph=\"Y UH1 R AH0 N AH0 S\">Uranus</phoneme> is the seventh planet from the Sun, and the third largest planet in our solar system.",
+ "nasa_neptune": "Neptune is the eighth and most distant planet in our solar system."
 }
