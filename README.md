@@ -10,7 +10,7 @@ Every game is a single web page, so it runs in any browser, on a tablet, phone o
 | 🐟 **Feed the Cat** | Adding and taking away, answers 0–10 | English |
 | 🚀 **Asteroid Pilot** | Number recognition 0–10 or 0–20; Hebrew counting words | English, Hebrew |
 | 🌍 **World Map** | The seven continents: tap one to hear its name | English |
-| 🪐 **Solar System** | The eight planets: explore, rocket tour, guess from clues, true sizes and distances | English |
+| 🪐 **Solar System** | The eight planets: explore in 3D, rocket tour, guess from clues, true sizes and distances | English |
 
 ## Playing
 
@@ -67,3 +67,12 @@ To change what a line says, edit it in `voice-lines/<game>.json`, then re-record
 Hebrew words are written in Hebrew with vowel marks, for the Hebrew voice.
 To force an exact English pronunciation, wrap the word in a tag, like `<phoneme alphabet="cmu-arpabet" ph="EY1 ZH AH0">Asia</phoneme>` (see `voice-lines/world-map.json`).
 The `recordings/` folder is kept out of the repository; the recordings that matter are stored inside each game.
+
+## Credits
+
+- **Planet photos** (Rocket Tour postcards) and **planet facts**: NASA, [science.nasa.gov/solar-system/planets](https://science.nasa.gov/solar-system/planets/).
+- **3D planet surface maps and star map**: NASA, from [NASA-3D-Resources](https://github.com/nasa/NASA-3D-Resources)
+  (Mercury and Uranus are artist's versions, made for this project).
+- **3D engine**: [three.js](https://threejs.org) (MIT License), a small bundle in `games/solar-system/vendor/`.
+- **World map shapes**: [Natural Earth](https://www.naturalearthdata.com) (public domain).
+- **Voices**: recorded with ElevenLabs.

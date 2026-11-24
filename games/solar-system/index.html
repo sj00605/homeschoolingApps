@@ -10,7 +10,7 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;min-height:100%;background:#070b22}
   body{font-family:'Andika',system-ui,sans-serif;color:var(--ink);display:flex;flex-direction:column;align-items:center;user-select:none}
-  header{width:100%;max-width:1200px;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px 4px;flex-wrap:wrap}
+  header{position:relative;z-index:35;width:100%;max-width:1200px;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px 4px;flex-wrap:wrap}
   h1{font-size:clamp(22px,4vw,30px);margin:0}
   .modes{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
   .mode{font-family:inherit;font-size:18px;font-weight:700;border:2px solid var(--edge);background:#0f1736;color:var(--ink);border-radius:999px;padding:7px 18px;cursor:pointer}
@@ -231,6 +231,7 @@ function tapPlanet(id){
     showInfo(P[id].name,P[id].fact);
     tone([660,880],.08);
     say(["name_"+id,"fact_"+id]);
+    if(window.open3D) window.open3D(id, P[id].name, P[id].fact);     // open the spinning 3D planet
   } else if(mode==="guess") guessTap(id);
   else tourTap(id);
 }
@@ -455,7 +456,7 @@ async function flyOut(){
 
 // ---------- modes & settings ----------
 function setMode(m){
-  mode=m; hideCard(); Voice.stop(); busy=false; target=null; farToken++;
+  mode=m; hideCard(); Voice.stop(); busy=false; target=null; farToken++; if(window.close3D) window.close3D();
   $("mainView").style.display = m==="scale" ? "none" : "";
   if(m!=="scale"){ $("bigView").style.display="none"; $("farView").style.display="none"; }
   document.querySelectorAll(".mode").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
@@ -476,6 +477,130 @@ $("talkBtn").onclick=()=>{ talking=!talking; if(!talking) Voice.stop();
 document.addEventListener("pointerdown",()=>Voice.warm(),{once:true});
 $("rocket").style.display="none";
 </script>
+<!-- ===== 3D planet viewer (Explore mode) ===== -->
+<style>
+  .v3d{position:fixed;inset:0;z-index:40;display:none;background:#030616;color:var(--ink)}
+  .v3d.open{display:flex}
+  .v3d-stage{position:relative;flex:1;min-width:0;min-height:0}
+  .v3d-stage canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  .v3d-hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:rgba(15,23,54,.8);border:2px solid var(--edge);
+            border-radius:999px;padding:6px 16px;font-size:16px;color:var(--soft);pointer-events:none;white-space:nowrap}
+  .v3d-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--soft)}
+  .v3d-side{width:min(380px,36vw);padding:26px 22px;display:flex;flex-direction:column;gap:10px;justify-content:center;background:#0b1130;border-left:2px solid var(--edge)}
+  .v3d-name{font-size:clamp(34px,5vw,52px);font-weight:700;line-height:1.05}
+  .v3d-fact{font-size:clamp(18px,2.4vw,22px);color:#dfe6ff}
+  .v3d-note{font-size:14px;color:var(--soft);border-top:1px solid var(--edge);padding-top:8px}
+  .v3d-x{position:absolute;top:12px;left:12px;width:48px;height:48px;border-radius:50%;border:2px solid var(--edge);background:rgba(15,23,54,.85);
+         color:var(--ink);font-size:22px;cursor:pointer;z-index:2}
+  @media (max-width:760px){ .v3d{flex-direction:column} .v3d-side{width:auto;border-left:none;border-top:2px solid var(--edge);padding:14px 18px} }
+</style>
+<div class="v3d" id="v3d" aria-modal="true" role="dialog">
+  <div class="v3d-stage">
+    <canvas id="v3dCanvas"></canvas>
+    <div class="v3d-loading" id="v3dLoading">Getting the planet ready… 🚀</div>
+    <div class="v3d-hint">👆 Drag to spin it · 🤏 Pinch to zoom</div>
+    <button class="v3d-x" id="v3dX" aria-label="Close">✕</button>
+  </div>
+  <div class="v3d-side">
+    <div class="v3d-name" id="v3dName"></div>
+    <div class="v3d-fact" id="v3dFact"></div>
+    <div class="v3d-note" id="v3dNote"></div>
+    <button class="btn" id="v3dClose" style="margin-top:8px">⬅ Back to the planets</button>
+  </div>
+</div>
+<script type="module">
+// Planet surface maps: NASA (NASA-3D-Resources), except Mercury and Uranus (artist's versions). Three.js: MIT license.
+const $=id=>document.getElementById(id);
+const TILT={mercury:0,venus:177.4,earth:23.4,mars:25.2,jupiter:3.1,saturn:26.7,uranus:97.8,neptune:28.3};   // real axial tilts (degrees)
+const SPIN={mercury:.12,venus:-.08,earth:.25,mars:.24,jupiter:.38,saturn:.36,uranus:.3,neptune:.3};          // Venus spins backwards
+const NOTE={
+  mercury:"Artist's version of Mercury's cratered surface, based on NASA photos.",
+  venus:"This is Venus's rocky ground, mapped by radar through its thick clouds. Venus spins backwards! Map: NASA",
+  earth:"A relief map, like a globe: green is low land, brown is mountains. See how Earth is tipped a little? Map: NASA",
+  mars:"Look for the giant canyon and the white ice caps at the top and bottom. Map: NASA",
+  jupiter:"Can you find the Great Red Spot? It's a storm bigger than Earth. Map: NASA",
+  saturn:"Saturn's rings are made of ice and rock. Spin it to look at them from the side! Map: NASA",
+  uranus:"Uranus really is this smooth! See how it's tipped all the way on its side? Artist's version.",
+  neptune:"Neptune's dark blue clouds are blown by the fastest winds in the solar system. Map: NASA",
+};
+let T=null, renderer, scene, camera, controls, loader, group=null, planet=null, raf=0, last=0, cur=null, failed=false;
+const texCache={};
+function tex(name){
+  if(!texCache[name]){ const t=loader.load(name); t.colorSpace=T.SRGBColorSpace; t.anisotropy=4; texCache[name]=t; }
+  return texCache[name];
+}
+async function ensure(){
+  if(T||failed) return !failed;
+  try{
+    T=await import("./vendor/three-planets.min.js");
+    const canvas=$("v3dCanvas");
+    renderer=new T.WebGLRenderer({canvas,antialias:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+    renderer.outputColorSpace=T.SRGBColorSpace;
+    scene=new T.Scene(); scene.background=new T.Color(0x030616);
+    camera=new T.PerspectiveCamera(38,1,.1,200);
+    controls=new T.OrbitControls(camera,canvas);
+    controls.enablePan=false; controls.enableDamping=true; controls.dampingFactor=.08; controls.rotateSpeed=.7; controls.zoomSpeed=.8;
+    loader=new T.TextureLoader();
+    loader.load("tex/stars.jpg",t=>{ t.mapping=T.EquirectangularReflectionMapping; t.colorSpace=T.SRGBColorSpace; scene.background=t; });
+    const sun=new T.DirectionalLight(0xffffff,2.8); sun.position.set(-6,2,5); scene.add(sun);
+    scene.add(new T.AmbientLight(0xffffff,.25));                     // so the night side isn't pitch black
+    new ResizeObserver(resize).observe($("v3dCanvas").parentElement);
+    return true;
+  }catch(e){ failed=true; console.warn("3D viewer unavailable:",e); return false; }
+}
+function resize(){
+  if(!renderer) return;
+  const el=$("v3dCanvas").parentElement, w=el.clientWidth, h=el.clientHeight;
+  if(!w||!h) return;
+  renderer.setSize(w,h,false); camera.aspect=w/h;
+  // on tall, narrow screens (phones), widen the view so the whole planet fits side to side
+  camera.fov = camera.aspect<1 ? 2*Math.atan(Math.tan(T.MathUtils.degToRad(19))/camera.aspect)*180/Math.PI : 38;
+  camera.updateProjectionMatrix();
+}
+function build(id){
+  if(group){ scene.remove(group); group.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); }
+  group=new T.Group(); group.rotation.z=-T.MathUtils.degToRad(TILT[id]);
+  planet=new T.Mesh(new T.SphereGeometry(1,96,64), new T.MeshStandardMaterial({map:tex(`tex/${id}.jpg`),roughness:1,metalness:0}));
+  group.add(planet);
+  if(id==="saturn"){
+    const inner=1.24, outer=2.27, g=new T.RingGeometry(inner,outer,160,1), pos=g.attributes.position, uv=g.attributes.uv, v=new T.Vector3();
+    for(let i=0;i<pos.count;i++){ v.fromBufferAttribute(pos,i); uv.setXY(i,(v.length()-inner)/(outer-inner),.5); }   // map the strip across the ring
+    const ring=new T.Mesh(g,new T.MeshBasicMaterial({map:tex("tex/saturn_ring.png"),transparent:true,side:T.DoubleSide,depthWrite:false,color:0xe8e2d2}));
+    ring.rotation.x=-Math.PI/2; group.add(ring);
+  }
+  if(id==="uranus"){   // Uranus has thin, dark rings
+    const ring=new T.Mesh(new T.RingGeometry(1.62,1.66,128,1),new T.MeshBasicMaterial({color:0xbfe8ee,transparent:true,opacity:.3,side:T.DoubleSide}));
+    ring.rotation.x=-Math.PI/2; group.add(ring);
+  }
+  scene.add(group);
+  // a little above and to the side, so rings show as ellipses (Uranus's ring stands up because it's tipped over)
+  const far = id==="saturn" ? 7.2 : 4.4, dir=new T.Vector3(.38,.3,1).normalize();
+  camera.position.copy(dir.multiplyScalar(far)); controls.target.set(0,0,0);
+  controls.minDistance = id==="saturn" ? 3 : 1.6; controls.maxDistance = id==="saturn" ? 11 : 7;
+  controls.update();
+}
+function loop(now){
+  const dt=Math.min(.05,(now-last)/1000||0); last=now;
+  if(planet) planet.rotation.y += SPIN[cur]*dt;
+  controls.update(); renderer.render(scene,camera);
+  raf=requestAnimationFrame(loop);
+}
+async function open3D(id, name, fact){
+  cur=id;
+  $("v3dName").textContent=name; $("v3dFact").textContent=fact; $("v3dNote").textContent=NOTE[id]||"";
+  $("v3d").classList.add("open"); $("v3dLoading").style.display="flex";
+  if(!await ensure()){ $("v3d").classList.remove("open"); return; }       // no 3D on this device: stay in the flat view
+  if(cur!==id) return;
+  resize(); build(id); $("v3dLoading").style.display="none";
+  cancelAnimationFrame(raf); last=performance.now(); raf=requestAnimationFrame(loop);
+}
+function close3D(){ cancelAnimationFrame(raf); raf=0; $("v3d").classList.remove("open"); }
+$("v3dClose").onclick=close3D; $("v3dX").onclick=close3D;
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") close3D(); });
+window.open3D=open3D; window.close3D=close3D;
+</script>
+
 <a class="hub-home" href="../../index.html" aria-label="Back to the Popell Homeschool Hub" title="Back to the hub">🏠</a>
 <style>.hub-home{position:fixed;left:12px;bottom:12px;z-index:50;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;
 font-size:24px;text-decoration:none;background:#fff;border:2px solid #d9dfe8;box-shadow:0 3px 8px rgba(0,0,0,.15)}.hub-home:active{transform:scale(.94)}</style>
